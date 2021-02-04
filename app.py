@@ -57,8 +57,11 @@ def get_task(task_id):
                 """
         cursor.execute(_SQL, (1, task_id))
         contents = cursor.fetchall()
-    tasks_data = db_data_modifier(app.config['data_list'], contents)
-
+    if not contents:
+        return jsonify({'error': 'Not Found'})
+    else:
+        tasks_data = db_data_modifier(app.config['data_list'], contents)
+    
     return jsonify({'taskgs': tasks_data})
 
 

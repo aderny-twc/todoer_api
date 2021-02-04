@@ -38,19 +38,28 @@ def get_tasks():
         _SQL = """
                 SELECT task_id, title, description, done, created_at
                 FROM tasks
-                WHERE user_id = 1
+                WHERE user_id = %s
                 """
-        cursor.execute(_SQL)
+        cursor.execute(_SQL, (1,))
         contents = cursor.fetchall()
     tasks_data = db_data_modifier(app.config['data_list'], contents)
 
     return jsonify({'taskgs': tasks_data})
 
 
-@app.route('/todo/api/tasks/<int:task_id>', methods=['GET'])
+@app.route('/todoer/api/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
-    pass
-    
+    with UseDataBase(app.config['dbconfig']) as cursor:
+        _SQL = """
+                SELECT task_id, title, description, done, created_at
+                FROM tasks
+                WHERE user_id = %s AND task_id = %s
+                """
+        cursor.execute(_SQL, (1, task_id))
+        contents = cursor.fetchall()
+    tasks_data = db_data_modifier(app.config['data_list'], contents)
+
+    return jsonify({'taskgs': tasks_data})
 
 
 if __name__ == '__main__':

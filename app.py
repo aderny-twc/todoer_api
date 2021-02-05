@@ -1,7 +1,9 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, make_response
 
 from mysqlcm import UseDataBase
 
+#User id placeholder
+USER_ID = 1
 
 app = Flask(__name__)
 
@@ -40,7 +42,7 @@ def get_tasks():
                 FROM tasks
                 WHERE user_id = %s
                 """
-        cursor.execute(_SQL, (1,))
+        cursor.execute(_SQL, (USER_ID,))
         contents = cursor.fetchall()
     tasks_data = db_data_modifier(app.config['data_list'], contents)
 
@@ -55,10 +57,10 @@ def get_task(task_id):
                 FROM tasks
                 WHERE user_id = %s AND task_id = %s
                 """
-        cursor.execute(_SQL, (1, task_id))
+        cursor.execute(_SQL, (USER_ID, task_id))
         contents = cursor.fetchall()
     if not contents:
-        return jsonify({'error': 'Not Found'})
+        return make_response(jsonify({'error': 'Not Found'}), 404)
     else:
         tasks_data = db_data_modifier(app.config['data_list'], contents)
     

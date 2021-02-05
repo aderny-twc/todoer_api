@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, make_response
+from flask import Flask, jsonify, make_response, request
 
 from mysqlcm import UseDataBase
 
@@ -49,6 +49,7 @@ def get_tasks():
     return jsonify({'taskgs': tasks_data})
 
 
+#Getting a single task
 @app.route('/todoer/api/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
     with UseDataBase(app.config['dbconfig']) as cursor:
@@ -65,6 +66,30 @@ def get_task(task_id):
         tasks_data = db_data_modifier(app.config['data_list'], contents)
     
     return jsonify({'taskgs': tasks_data})
+
+
+#Adding a new task
+@app.route('/todoer/api/tasks', methods=['POST'])
+def create_task():
+    if not request.json or not 'title' in request.json or not 'description' in request.json:
+        abort(400)
+    task = {
+            'title': request.json['title'],
+            'description': request.json['description'],
+            'done': request.json.get('done', 0)
+            }
+    with UseDataBase(app.config['dbconfig']) as cursor:
+        _SQL = """
+                INSERT INTO tasks (user_id, title, description, done)
+                VALUES
+                (%s, %s, %s, %s)
+                """
+        cursor.execute(_SQL, (USER_ID,
+                                task['title'],
+                                task['description'],
+                                task['done'],))
+        
+    return jsonify({'task': task}), 201
 
 
 if __name__ == '__main__':

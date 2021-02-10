@@ -1,23 +1,35 @@
 from flask import Flask, jsonify, make_response, request
 
-from mysqlcm import UseDataBase
+from db_pack.mysqlcm import UseDataBase
+from db_pack.db_comm import DbApiTeller
 
-#User id placeholder
-USER_ID = 1
 
 app = Flask(__name__)
 
-#Database configuration
-app.config['dbconfig'] = {'host': 'localhost',
+### CONFIGURATION
+#DB configuration
+app.config['db_config'] = {'host': 'localhost',
                             'user': 'todoerAPI',
                             'password': 'todoerAPIpasswd',
                             'database': 'todoerAPIdb',}
 
-app.config['data_list'] = ['task_id',
+#Table fields
+app.config['data_fields'] = ['task_id',
                             'title',
                             'description',
                             'done',
                             'created_at']
+
+#User id (palceholder)
+USER_ID = 1
+#Tasks table
+TABLE_NAME = 'tasks'
+
+#DB object
+db_teller = DbApiTeller(config=app.config['db_config'],
+                        user_id=USER_ID,
+                        table_name=TABLE_NAME,
+                        fields=app.config['data_fields'])
 
 
 def db_data_modifier(key_list, contents) -> list:
@@ -36,15 +48,8 @@ def db_data_modifier(key_list, contents) -> list:
 #Getting all tasks for user
 @app.route('/todoer/api/tasks', methods=['GET'])
 def get_tasks():
-    with UseDataBase(app.config['dbconfig']) as cursor:
-        _SQL = """
-                SELECT task_id, title, description, done, created_at
-                FROM tasks
-                WHERE user_id = %s
-                """
-        cursor.execute(_SQL, (USER_ID,))
-        contents = cursor.fetchall()
-    tasks_data = db_data_modifier(app.config['data_list'], contents)
+    contents = db_teller.get_data()
+    tasks_data = db_data_modifier(app.config['data_fields'], contents)
 
     return jsonify({'taskgs': tasks_data})
 
@@ -52,23 +57,18 @@ def get_tasks():
 #Getting a single task
 @app.route('/todoer/api/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
-    with UseDataBase(app.config['dbconfig']) as cursor:
-        _SQL = """
-                SELECT task_id, title, description, done, created_at
-                FROM tasks
-                WHERE user_id = %s AND task_id = %s
-                """
-        cursor.execute(_SQL, (USER_ID, task_id))
-        contents = cursor.fetchall()
+    contents = db_teller.get_data(task_id)
+    print(task_id)
     if not contents:
         return make_response(jsonify({'error': 'Not Found'}), 404)
     else:
-        tasks_data = db_data_modifier(app.config['data_list'], contents)
+        tasks_data = db_data_modifier(app.config['data_fields'], contents)
     
     return jsonify({'taskgs': tasks_data})
 
 
 #Adding a new task
+#TODO: Connect to new DB module
 @app.route('/todoer/api/tasks', methods=['POST'])
 def create_task():
     if not request.json or not 'title' in request.json or not 'description' in request.json:

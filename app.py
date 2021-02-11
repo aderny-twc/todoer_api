@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, make_response, request
 
-from db_pack.mysqlcm import UseDataBase
 from db_pack.db_comm import DbApiTeller
 
 
@@ -58,7 +57,7 @@ def get_tasks():
 @app.route('/todoer/api/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
     contents = db_teller.get_data(task_id)
-    print(task_id)
+    #print(task_id)
     if not contents:
         return make_response(jsonify({'error': 'Not Found'}), 404)
     else:
@@ -68,27 +67,21 @@ def get_task(task_id):
 
 
 #Adding a new task
-#TODO: Connect to new DB module
 @app.route('/todoer/api/tasks', methods=['POST'])
 def create_task():
-    if not request.json or not 'title' in request.json or not 'description' in request.json:
+    if (not request.json
+        or not 'title' in request.json
+        or not 'description' in request.json):
         abort(400)
+
     task = {
             'title': request.json['title'],
             'description': request.json['description'],
-            'done': request.json.get('done', 0)
+            'done': str(request.json.get('done', 0)),
+            'user_id': USER_ID,
             }
-    with UseDataBase(app.config['dbconfig']) as cursor:
-        _SQL = """
-                INSERT INTO tasks (user_id, title, description, done)
-                VALUES
-                (%s, %s, %s, %s)
-                """
-        cursor.execute(_SQL, (USER_ID,
-                                task['title'],
-                                task['description'],
-                                task['done'],))
-        
+    db_teller.post_data(task) 
+    #print(task)
     return jsonify({'task': task}), 201
 
 

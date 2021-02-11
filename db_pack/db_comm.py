@@ -41,14 +41,26 @@ class DbApiTeller:
                 data = cursor.fetchall()
         return data
 
-
-
-
-    def post_data(self, values: dict) -> dict:
+    def post_data(self, values: dict) -> None:
         """
-        Creates a new record in the database with the values specified in the dictionary.
+        Creates a new record in the database with the values
+        specified in the dictionary.
         """
-        pass
+        with UseDataBase(self.configuration) as cursor:
+            fields = sorted(values.keys())
+            values_fields = [str(values[key])
+                            for key in sorted(values.keys())]
+            _SQL = f"""
+                    INSERT INTO {self.table_name} ({', '.join(fields)})
+                    VALUES
+                    ({', '.join([("'" + value + "'")
+                                if not value.isdigit()
+                                else value
+                                for value in values_fields])})
+
+                    """
+            #print(_SQL)
+            cursor.execute(_SQL)
 
     def put_data(self, fields: dict) -> None:
         """

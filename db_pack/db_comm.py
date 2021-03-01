@@ -66,7 +66,19 @@ class DbApiTeller:
         """
         Updates a record in the database by the specified fields.
         """
-        pass
+        with UseDataBase(self.configuration) as cursor:
+            fields = sorted(values.keys())
+            values_fields = [str(values[key])
+                            for key in sorted(values.keys())]
+            _SQL = f"""
+                    UPDATE {self.table_name}
+                    SET field = value, field2 ....
+                    WHRER user and task_id
+
+                    """
+            #print(_SQL)
+            cursor.execute(_SQL)
+        
 
     def del_data(self, record: int) -> dict:
         """

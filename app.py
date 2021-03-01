@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, make_response, request
+from flask import Flask, jsonify, make_response, request, abort
+import json
 
 from db_pack.db_comm import DbApiTeller
 
@@ -43,6 +44,18 @@ def db_data_modifier(key_list, contents) -> list:
     else:
         return None
 
+def data_update_check(fields: list, json_obj: dict) -> bool:
+    """
+    Checks the compliance of the json object with the required parameters.
+    Accepts valid fields and json object
+    """
+    for key in json_obj:
+        if key in fields and type(key) == unicode:
+            continue
+        else:
+            return False
+    return True
+
 
 #Getting all tasks for user
 @app.route('/todoer/api/tasks', methods=['GET'])
@@ -62,7 +75,7 @@ def get_task(task_id):
         return make_response(jsonify({'error': 'Not Found'}), 404)
     else:
         tasks_data = db_data_modifier(app.config['data_fields'], contents)
-    
+
     return jsonify({'taskgs': tasks_data})
 
 
@@ -80,9 +93,23 @@ def create_task():
             'done': str(request.json.get('done', 0)),
             'user_id': USER_ID,
             }
-    db_teller.post_data(task) 
+    db_teller.post_data(task)
     #print(task)
     return jsonify({'task': task}), 201
+
+
+#Updating task
+@app.route('/todoer/api/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    #upd_task = db_teller.get_data(task_id)
+    try:
+        if data_update_check(json.load(request.json)):
+            abort(400)
+        task = json.load(request.json)
+        db_teller.put_data(task)
+        return jsonify({'task': task})
+    except:
+        abort(404)
 
 
 if __name__ == '__main__':
